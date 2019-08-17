@@ -1,5 +1,8 @@
 import sys
+import dayDataBase
 
+from datetime import date
+from mail import enviarMail
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
@@ -99,18 +102,25 @@ class CentralWidget(QWidget):
 		self.update_total()
 
 	def buy(self):
+		self.add_item()
+
+	def add_item(self, buy=True):
 		item = self.edit.text()  # agregar función
 		"""
 		agregar al total
 		manejar errores
 		"""
+		if buy:
+			sign = 1
+		else:
+			sign = -1
 		if item in self.database:
 			for i in range(self.sp.value()):
 				self.list.addItem('{: <32} {: <32} {: >13} {: >54}'.format(
 				str(self.database[item]['name']),
 				str(self.database[item]['comp']),
 				str(self.database[item]['color']), 
-				str(self.database[item]['price']))) 
+				str(sign * self.database[item]['price']))) 
 		else:
 			self.status_bar.emit("item not in database")
 			print("item not in database")
@@ -120,10 +130,42 @@ class CentralWidget(QWidget):
 		self.update_total()
 
 	def give_back(self):
-		self.update_total()
+		self.add_item(False)
 
 	def end_transaction(self):
+		# pop up
+		if self.list.count() > 0:
+			self.endTransactionPopup = endTransactionPopup(self)
+			self.endTransactionPopup.setGeometry(550, 350, 100, 100)
+			self.endTransactionPopup.show()
+		else:
+			self.status_bar.emit("list empty")
+
+	
+	def after_popup(self):
+		total = 0
+		items = []
+		for item in range(self.list.count()):
+			price = float(self.list.item(item).text()[-10:].strip())
+			total += price
+			if price > 0:
+				items.append(('compra', self.list.item(item).text()))
+			else:
+				items.append(('devolució',self.list.item(item).text()))
+
+		dayDataBase.add_transaction({'total': total, 'items': items})
+		for item in range(self.list.count()):
+			self.list.takeItem(0)
 		self.update_total()
+
+	def end_day(self):
+		enviarMail(str(date.today()), self.redactar_mail())
+		dayDataBase.reset_json()
+		sys.exit()
+
+	def redactar_mail(self):
+		# Redactar el Mail
+		return dayDataBase.Mail()
 
 	def keyPressEvent(self, event):
 		"""
@@ -202,7 +244,10 @@ class MainWindow(QMainWindow):
 		"""
 		Agregar acciones previas a la salida de la aplicacion
 		"""
-		QApplication.quit()
+		self.endDayPopup = endDayPopup(self.form)
+		self.endDayPopup.setGeometry(550, 350, 100, 100)
+		self.endDayPopup.show()
+
 
 class CodeWindow(QDialog):
 
@@ -239,6 +284,93 @@ class CodeWindow(QDialog):
 		adding Layout
 		"""
 		self.setLayout(vbox)
+
+class endTransactionPopup(QWidget):
+	def __init__(self, parent, *args, **kargs):
+		super().__init__()
+		
+		self.name = "Precio Final"
+		
+		self.parent = parent
+
+		self.initGUI()
+	
+	def initGUI(self):
+		self.label = QLabel(self.name, self)
+		
+		self.buttons = []
+
+		self.buttons.append(QPushButton('&Volver', self))
+		self.buttons.append(QPushButton('&Finalizar', self))
+		
+		self.buttons[0].clicked.connect(self.goBack)
+		self.buttons[1].clicked.connect(self.End)
+
+		vbox = QVBoxLayout()
+		vbox.addWidget(self.label)
+
+		hbox = QHBoxLayout()
+		hbox.addWidget(self.buttons[0])
+		hbox.addWidget(self.buttons[1])
+
+		vbox.addLayout(hbox)
+
+		"""
+		adding Layout
+		"""
+		self.setLayout(vbox)
+
+
+	def End(self):
+		self.parent.after_popup()
+		self.close()
+	
+	def goBack(self):
+		self.close()
+
+class endDayPopup(QWidget):
+	def __init__(self, parent, *args, **kargs):
+		super().__init__()
+		
+		self.name = "¿Desea cerrar elD ía?"
+		
+		self.parent = parent
+
+		self.initGUI()
+	
+	def initGUI(self):
+		self.label = QLabel(self.name, self)
+		
+		self.buttons = []
+
+		self.buttons.append(QPushButton('&Si', self))
+		self.buttons.append(QPushButton('&No', self))
+		
+		self.buttons[0].clicked.connect(self.End)
+		self.buttons[1].clicked.connect(self.goBack)
+
+		vbox = QVBoxLayout()
+		vbox.addWidget(self.label)
+
+		hbox = QHBoxLayout()
+		hbox.addWidget(self.buttons[0])
+		hbox.addWidget(self.buttons[1])
+
+		vbox.addLayout(hbox)
+
+		"""
+		adding Layout
+		"""
+		self.setLayout(vbox)
+
+
+	def End(self):
+		self.parent.end_day()
+		self.close()
+	
+	def goBack(self):
+		self.close()
+
 
 def init_interface(dataBase):
 	app = QApplication([])
