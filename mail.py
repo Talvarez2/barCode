@@ -1,4 +1,5 @@
 import smtplib
+import passwords
 
 def enviarMail(subject, message):
 	try:
@@ -7,8 +8,8 @@ def enviarMail(subject, message):
 		from email.mime.multipart import MIMEMultipart
 
 		email = 'tienda.millma@gmail.com'
-		password = 'Eltomyesbacan'
-		send_to_email = 'carolareyesr@gmail.com'
+		password = passwords.mail
+		send_to_email = 'toalre@gmail.com'  #'carolareyesr@gmail.com'
 	
 		msg = MIMEMultipart()
 		msg['From'] = email
@@ -24,8 +25,10 @@ def enviarMail(subject, message):
 		text = msg.as_string() # You now need to convert the MIMEMultipart object to a string to send
 		server.sendmail(email, send_to_email, text)
 		server.quit()
+		return True
 	except:
 		print('Something went wrong...')
+		return False
 
 
 if __name__ == "__main__":

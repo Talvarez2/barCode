@@ -9,8 +9,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtWidgets import QAction, QDialog
 from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QAction, QListWidget
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
-from PyQt5.QtWidgets import QSpinBox
-
+from PyQt5.QtWidgets import QSpinBox, QMessageBox
 
 class CentralWidget(QWidget):
 	"""
@@ -135,7 +134,10 @@ class CentralWidget(QWidget):
 	def end_transaction(self):
 		# pop up
 		if self.list.count() > 0:
-			self.endTransactionPopup = endTransactionPopup(self)
+			total = 0
+			for item in range(self.list.count()):
+				total += float(self.list.item(item).text()[-10:].strip())		
+			self.endTransactionPopup = endTransactionPopup(self, total)
 			self.endTransactionPopup.setGeometry(550, 350, 100, 100)
 			self.endTransactionPopup.show()
 		else:
@@ -159,9 +161,15 @@ class CentralWidget(QWidget):
 		self.update_total()
 
 	def end_day(self):
-		enviarMail(str(date.today()), self.redactar_mail())
-		dayDataBase.reset_json()
+		self.day_total()
+		if enviarMail(str(date.today()), self.redactar_mail()):
+			dayDataBase.reset_json()
 		sys.exit()
+	
+	def day_total(self):
+		dataBase = dayDataBase.read_json()
+		QMessageBox.about(self, "total del día", '${}'.format(dataBase['total']))
+
 
 	def redactar_mail(self):
 		# Redactar el Mail
@@ -208,6 +216,10 @@ class MainWindow(QMainWindow):
 		special.setStatusTip('Manejo Para gerentes')
 		special.triggered.connect(self.manejo_inventario)
 
+		day_total = QAction(QIcon(None), '&Total del Día', self)
+		day_total.setStatusTip('Entrega total del día hasta el momento')
+		day_total.triggered.connect(self.day_total)
+
 		exit = QAction(QIcon(None), '&Exit', self)
 		exit.setShortcut('Ctrl+Q')
 		exit.setStatusTip('Exit application')
@@ -217,6 +229,7 @@ class MainWindow(QMainWindow):
 		menubar = self.menuBar()
 		options = menubar.addMenu('&Opciones')  # primer menu
 		options.addAction(special)
+		options.addAction(day_total)
 		options.addAction(exit)
 
 		"""
@@ -239,6 +252,10 @@ class MainWindow(QMainWindow):
 		self.statusBar().showMessage('modificando inventario')
 		clave = CodeWindow(self)
 		clave.show()
+
+	def day_total(self):
+		dataBase = dayDataBase.read_json()
+		QMessageBox.about(self, "total del día", '${}'.format(dataBase['total']))
 
 	def exit_app(self):
 		"""
@@ -286,10 +303,10 @@ class CodeWindow(QDialog):
 		self.setLayout(vbox)
 
 class endTransactionPopup(QWidget):
-	def __init__(self, parent, *args, **kargs):
+	def __init__(self, parent, total, *args, **kargs):
 		super().__init__()
 		
-		self.name = "Precio Final"
+		self.name = "Precio Final: ${}".format(total)
 		
 		self.parent = parent
 
@@ -320,7 +337,6 @@ class endTransactionPopup(QWidget):
 		"""
 		self.setLayout(vbox)
 
-
 	def End(self):
 		self.parent.after_popup()
 		self.close()
@@ -332,7 +348,7 @@ class endDayPopup(QWidget):
 	def __init__(self, parent, *args, **kargs):
 		super().__init__()
 		
-		self.name = "¿Desea cerrar elD ía?"
+		self.name = "¿Desea cerrar el día?"
 		
 		self.parent = parent
 
