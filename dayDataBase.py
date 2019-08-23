@@ -15,8 +15,19 @@ def read_json():
 		return dataBase
 
 def Mail():
+	mail = ""
 	dataBase = read_json()
-	return json.dumps(dataBase, indent = 4)
+	mail = "El total del día fue de {} \n".format(dataBase["total"])
+	
+	for time in dataBase["transactions"]:
+		day, clock = time.split(" ")
+		hour, _ = clock.split(".")
+		mail += "\n El día {} a las {} se vendio un total de {} \n los items vendidos fueron: \n".format(
+		day, hour, dataBase["transactions"][time]["total"])
+		for item in dataBase["transactions"][time]["items"]:
+			mail += "	-{}	|	 el cual fue una {}\n".format(item[1], item[0]) 
+
+	return mail
 
 def add_transaction(transaction):
 	""" this function recives a dict type transaction """
