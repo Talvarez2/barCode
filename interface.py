@@ -1,5 +1,6 @@
 import sys
 import dayDataBase
+import passwords
 
 from dataBase import dataBase
 from datetime import date
@@ -105,8 +106,9 @@ class CentralWidget(QWidget):
 	def buy(self):
 		self.add_item()
 
-	def add_item(self, buy=True):
-		item = self.edit.text()  # agregar función
+	def add_item(self, buy=True, manual_price = '', item = ''):
+		if item == '':
+			item = self.edit.text()  # agregar función
 		"""
 		agregar al total
 		manejar errores
@@ -115,6 +117,10 @@ class CentralWidget(QWidget):
 			sign = 1
 		else:
 			sign = -1
+		if manual_price != '':
+			price = manual_price
+		else:
+			price = str(sign * self.database[item]['price'])
 		if item in self.database:
 			for i in range(self.sp.value()):
 				self.list.addItem('{: <5}{: <30} {: <30} {: >12} {: >54}'.format(
@@ -122,7 +128,7 @@ class CentralWidget(QWidget):
 				str(self.database[item]['name']),
 				str(self.database[item]['comp']),
 				str(self.database[item]['color']), 
-				str(sign * self.database[item]['price']))) 
+				price)) 
 		else:
 			self.status_bar.emit("item not in database")
 			print("item not in database")
@@ -209,6 +215,8 @@ class MainWindow(QMainWindow):
 
 	def __init__(self, database, *args, **kwargs):
 		super().__init__()
+
+		self.modify = None
 		
 		"""configuramos la geometría de la ventan"""
 		self.setWindowTitle('Milma Hilados')
@@ -254,7 +262,7 @@ class MainWindow(QMainWindow):
 
 	def manejo_inventario(self):
 		self.statusBar().showMessage('modificando inventario')
-		clave = CodeWindow(self)
+		clave = CodeWindow(self, self.form)
 		clave.show()
 
 	def day_total(self):
@@ -272,11 +280,12 @@ class MainWindow(QMainWindow):
 
 class CodeWindow(QDialog):
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, main, *args, **kwargs):
 		"""
 		Este método inicializa la ventana.
 		"""
 		super().__init__(*args, **kwargs)
+		self.main = main
 		self.init_GUI()
 	
 	def init_GUI(self):
@@ -287,6 +296,7 @@ class CodeWindow(QDialog):
 		self.label = QLabel('Clave:', self)
 		self.edit = QLineEdit('', self)
 		self.button = QPushButton('&Ingresar', self)
+		self.button.clicked.connect(self.enter)
 
 		# Ajustamos la geometria de la ventana
 		self.setGeometry(300, 300, 300, 100)
@@ -305,6 +315,15 @@ class CodeWindow(QDialog):
 		adding Layout
 		"""
 		self.setLayout(vbox)
+
+	def enter(self):
+		password = self.edit.text()  # agregar función
+		if passwords.user1 == password or passwords.user2 == password:
+			self.main.modify = special_window(self.main)
+			self.main.modify.show()
+			self.edit.clear()
+			self.close()
+
 
 class endTransactionPopup(QWidget):
 	def __init__(self, parent, total, *args, **kargs):
@@ -347,6 +366,7 @@ class endTransactionPopup(QWidget):
 	
 	def goBack(self):
 		self.close()
+
 
 class endDayPopup(QWidget):
 	def __init__(self, parent, *args, **kargs):
@@ -391,6 +411,72 @@ class endDayPopup(QWidget):
 	def goBack(self):
 		self.close()
 
+class special_window(QDialog):
+
+	def __init__(self, main, *args, **kwargs):
+		"""
+		Este método inicializa la ventana.
+		"""
+		super().__init__(*args, **kwargs)
+		self.main = main
+		self.init_GUI()
+	
+	def init_GUI(self):
+		"""
+		Este método configura la interfaz y todos sus widgets,
+		posterior a __init__().
+		"""
+		self.labels = []
+		self.edits = []
+		self.buttons = []
+
+		self.labels.append(QLabel('Codigo', self))
+		self.labels.append(QLabel('Precio', self))
+		self.edits.append(QLineEdit('', self))
+		self.edits.append(QLineEdit('', self))
+		self.buttons.append(QPushButton('&Ingresar', self))
+		self.buttons.append(QPushButton('&Cerrar', self))
+		self.buttons[0].clicked.connect(self.enter)
+		self.buttons[1].clicked.connect(self.close)
+
+		# Ajustamos la geometria de la ventana
+		self.setGeometry(300, 300, 300, 100)
+		self.setWindowTitle('Igrese Clave')
+		
+		vbox = QVBoxLayout()
+
+		hbox = QHBoxLayout()
+		hbox.addWidget(self.labels[0])
+		hbox.addWidget(self.edits[0])
+
+		vbox.addLayout(hbox)
+
+		hbox = QHBoxLayout()
+		hbox.addWidget(self.labels[1])
+		hbox.addWidget(self.edits[1])
+
+		vbox.addLayout(hbox)
+		
+		hbox = QHBoxLayout()
+		hbox.addWidget(self.buttons[0])
+		hbox.addWidget(self.buttons[1])
+
+		vbox.addLayout(hbox)
+
+
+		"""
+		adding Layout
+		"""
+		self.setLayout(vbox)
+
+	def enter(self):
+		price = self.edits[1].text()
+		item = self.edits[0].text()
+		if price.isdigit():
+			self.main.form.add_item(True, price, item)
+			self.edits[0].clear()
+			self.edits[1].clear()
+	
 
 def init_interface(dataBase):
 	app = QApplication([])
