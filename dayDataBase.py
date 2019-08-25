@@ -37,6 +37,13 @@ def add_transaction(transaction):
 	with open('dataBase.json', 'w') as outfile:
 		json.dump(dataBase, outfile, indent = 4)
 
+def actualize(dataBase):
+	dayDataBase = read_json()
+	for key in dayDataBase['transactions']:
+		for item in dayDataBase['transactions'][key]['items']:
+			dataBase.actualize_dataBase(item[1][:4].strip())
+	dataBase.save()
+
 
 if __name__ == "__main__":
 	reset_json()

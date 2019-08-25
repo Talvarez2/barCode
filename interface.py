@@ -1,6 +1,7 @@
 import sys
 import dayDataBase
 
+from dataBase import dataBase
 from datetime import date
 from mail import enviarMail
 from PyQt5.QtCore import pyqtSignal
@@ -19,6 +20,7 @@ class CentralWidget(QWidget):
 	def __init__(self, database, *args, **kwargs):
 		super().__init__()
 		self.database = database
+		self.sheet = dataBase()
 		self.init_GUI()
 
 	def init_GUI(self):
@@ -31,8 +33,8 @@ class CentralWidget(QWidget):
 		self.labels.append(QLabel('Codigo', self))
 		self.labels.append(QLabel('total:', self))
 		self.labels.append(QLabel(
-		'{: <33} {: <32} {: >13} {: >54}'.format(
-		' Nombre', 'Composición', 'Color', 'Precio')))
+		'{: <5}{: <31} {: <30} {: >11} {: >54}'.format(
+		'id',' Nombre', 'Composición', 'Color', 'Precio')))
 		self.labels[2].setFont(QFont("Monospace"))
 		
 		self.buttons.append(QPushButton('&Agregar', self))
@@ -115,7 +117,8 @@ class CentralWidget(QWidget):
 			sign = -1
 		if item in self.database:
 			for i in range(self.sp.value()):
-				self.list.addItem('{: <32} {: <32} {: >13} {: >54}'.format(
+				self.list.addItem('{: <5}{: <30} {: <30} {: >12} {: >54}'.format(
+				str(self.database[item]['number']),
 				str(self.database[item]['name']),
 				str(self.database[item]['comp']),
 				str(self.database[item]['color']), 
@@ -153,7 +156,7 @@ class CentralWidget(QWidget):
 			if price > 0:
 				items.append(('compra', self.list.item(item).text()))
 			else:
-				items.append(('devolució',self.list.item(item).text()))
+				items.append(('devolución',self.list.item(item).text()))
 
 		dayDataBase.add_transaction({'total': total, 'items': items})
 		for item in range(self.list.count()):
@@ -162,6 +165,7 @@ class CentralWidget(QWidget):
 
 	def end_day(self):
 		self.day_total()
+		dayDataBase.actualize(self.sheet)
 		if enviarMail(str(date.today()), self.redactar_mail()):
 			dayDataBase.reset_json()
 		sys.exit()
