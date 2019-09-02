@@ -117,11 +117,11 @@ class CentralWidget(QWidget):
 			sign = 1
 		else:
 			sign = -1
-		if manual_price != '':
-			price = manual_price
-		else:
-			price = str(sign * self.database[item]['price'])
 		if item in self.database:
+			if manual_price != '':
+				price = manual_price
+			else:
+				price = str(sign * self.database[item]['price'])
 			for i in range(self.sp.value()):
 				self.list.addItem('{: <5}{: <30} {: <30} {: >12} {: >54}'.format(
 				str(self.database[item]['number']),
