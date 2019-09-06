@@ -9,7 +9,7 @@ def enviarMail(subject, message):
 
 		email = 'tienda.millma@gmail.com'
 		password = passwords.mail
-		send_to_email = 'toalre@gmail.com'  #'carolareyesr@gmail.com'
+		send_to_email = 'tienda.millma@gmail.com'  #'carolareyesr@gmail.com'
 	
 		msg = MIMEMultipart()
 		msg['From'] = email
