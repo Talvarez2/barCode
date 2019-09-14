@@ -21,6 +21,11 @@ Project built with [python 3.7.4](https://www.python.org/) for Millma Hilados.
 touch InventarioMillma.xlsx
 ```
 
+* set color of product in column C
+* set composition of product in column E
+* set barcode of product in column F
+* set store value of product in column AN
+
 ### Set passwords
 
 ```sh
