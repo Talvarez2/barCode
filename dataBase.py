@@ -8,7 +8,7 @@ def get_database():
 	previous_comp = ""
 	
 	"""open the database"""
-	excel_document = openpyxl.load_workbook('InventarioMillma.xlsx', data_only=True)
+	excel_document = openpyxl.load_workbook('/Users/Millma/millma/barCode/InventarioMillma.xlsx', data_only=True)
 	sheet = excel_document['General']
 	
 	"""read the database """
@@ -40,7 +40,7 @@ class dataBase():
 
 	def __init__(self):
 
-		self.excel_document = openpyxl.load_workbook('InventarioMillma.xlsx')
+		self.excel_document = openpyxl.load_workbook('/Users/Millma/millma/barCode/InventarioMillma.xlsx')
 		self.sheet = self.excel_document['General']
 
 	def actualize_dataBase(self, id):
